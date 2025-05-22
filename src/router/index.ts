@@ -1,24 +1,51 @@
 import Vue from 'vue'
-import VueRouter, { RouteConfig } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import VueRouter from 'vue-router'
 
 Vue.use(VueRouter)
 
-const routes: Array<RouteConfig> = [
+const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    redirect: '/login',
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
-]
+    path: "/login",
+    component: () => import("@/views/login/index.vue"),
+    meta: { title: "家庭记账", hidden: true, notNeedAuth: true }
+  },
+  {
+    path: '/home',
+    name: 'home',
+    component: () => import("@/views/HomeView.vue"),
+    redirect:'/manage',
+    children: [
+      {
+        path: '/manage',
+        name: 'finance-manage',
+        component: () => import("@/views/finance/Manage.vue"),
+        meta: { title: "收支分类管理" }
+      },
+      {
+        path: '/statistics',
+        name: 'finance-statistics',
+        component: () => import("@/views/finance/Statistics.vue"),
+        meta: { title: "统计分析" }
+      },
+    ]
+  },
+  {
+    path: '/manage',
+    name: 'finance-manage',
+    component: () => import("@/views/finance/Manage.vue"),
+    meta: { title: "收支分类管理" }
+  },
+  {
+    path: '/statistics',
+    name: 'finance-statistics',
+    component: () => import("@/views/finance/Statistics.vue"),
+    meta: { title: "统计分析" }
+  },
+];
 
 const router = new VueRouter({
   routes
