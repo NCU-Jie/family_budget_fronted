@@ -8,14 +8,11 @@
         <el-menu :default-openeds="['1']" router>
           <el-submenu index="1">
             <template slot="title"><i class="el-icon-message"></i>导航一</template>
-            <el-menu-item-group>
-              <template slot="title">分组一</template>
-              <el-menu-item index="/manage">收支分类管理</el-menu-item>
+            <el-menu-item index="/dashboard">首页</el-menu-item>
+              <el-menu-item index="/transaction">收支分类管理</el-menu-item>
               <el-menu-item index="/statistics">统计分析</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="分组2">
-              <el-menu-item index="/other">其他选项</el-menu-item>
-            </el-menu-item-group>
+              <el-menu-item index="/manage">其他选项</el-menu-item>
+          
             
           </el-submenu>
         </el-menu>

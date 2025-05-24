@@ -15,14 +15,18 @@ const routes = [
   },
   {
     path: '/home',
-    name: 'home',
     component: () => import("@/views/HomeView.vue"),
-    redirect:'/manage',
+    redirect:'/dashboard',
     children: [
       {
-        path: '/manage',
-        name: 'finance-manage',
-        component: () => import("@/views/finance/Manage.vue"),
+        path: '/dashboard',
+        name: 'dashboard',
+        component: () =>  import("@/views/DashboardView.vue"),
+        meta: { title: "首页" }
+      },
+      {
+        path: '/transaction',
+        component: () => import("@/views/TransactionView.vue"),
         meta: { title: "收支分类管理" }
       },
       {
@@ -31,20 +35,15 @@ const routes = [
         component: () => import("@/views/finance/Statistics.vue"),
         meta: { title: "统计分析" }
       },
+      {
+        path: '/manage',
+        name: 'finance-statistics',
+        component: () => import("@/views/finance/Manage.vue"),
+        meta: { title: "统计分析" }
+      },
     ]
   },
-  {
-    path: '/manage',
-    name: 'finance-manage',
-    component: () => import("@/views/finance/Manage.vue"),
-    meta: { title: "收支分类管理" }
-  },
-  {
-    path: '/statistics',
-    name: 'finance-statistics',
-    component: () => import("@/views/finance/Statistics.vue"),
-    meta: { title: "统计分析" }
-  },
+
 ];
 
 const router = new VueRouter({
