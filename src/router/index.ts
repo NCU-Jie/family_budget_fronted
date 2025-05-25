@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import { component } from 'vue/types/umd';
 
 Vue.use(VueRouter)
 
@@ -32,15 +33,25 @@ const routes = [
       {
         path: '/statistics',
         name: 'finance-statistics',
-        component: () => import("@/views/finance/Statistics.vue"),
+        component: () => import("@/views/StatisticsView.vue"),
         meta: { title: "统计分析" }
       },
       {
         path: '/manage',
         name: 'finance-statistics',
-        component: () => import("@/views/finance/Manage.vue"),
+        component: () => import("@/views/Manage.vue"),
         meta: { title: "统计分析" }
       },
+      {
+        path: '/member',
+        name: 'finance-statistics',
+        component: () => import("@/views/MemberView.vue"),
+        meta: { title: "统计分析" }
+      },
+      {
+        path: '/categories',
+        component: () => import("@/views/CategoriesView.vue"),
+      }
     ]
   },
 
