@@ -25,17 +25,31 @@ export default {
     };
   },
   methods: {
-    handleLogin() {
-      // 模拟登录逻辑
-      if (this.loginForm.username && this.loginForm.password) {
-        this.$router.push("/home");
-        console.log("登录成功", this.loginForm);
-      } else {
-        console.error("请输入用户名和密码");
+    async handleLogin() {
+      // 验证表单输入
+      if (!this.loginForm.username || !this.loginForm.password) {
+        this.$message.error('请输入用户名和密码');
+        return;
       }
-    },
-  },
-};
+
+      try {
+        // 调用 Vuex action 进行登录
+        const success = await this.$store.dispatch('user/login', this.loginForm);
+        if (success) {
+          this.$message.success('登录成功');
+          // 跳转到首页或重定向页面
+          const redirect = this.$route.query.redirect || '/home';
+          this.$router.push(redirect);
+        } else {
+          // 登录失败（错误信息已在 action 中处理）
+        }
+      } catch (error) {
+        // 处理网络错误或其他异常
+        this.$message.error(error.message || '登录失败，请稍后重试');
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
 const request= axios.create({
-    baseURL: '/api',
+    baseURL: '/api/budget',
 })
 export default request;
