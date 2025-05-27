@@ -1,191 +1,227 @@
 <template>
-  <div class="accounting-form-container">
-    <h2 class="form-title">家庭记账本</h2>
-    
-    <el-form :model="form" label-width="100px" class="form-content">
-      <!-- 收支类型 -->
-      <el-form-item label="收支类型" required>
-        <el-radio-group v-model="form.type">
-          <el-radio-button label="income">收入</el-radio-button>
-          <el-radio-button label="expense">支出</el-radio-button>
-        </el-radio-group>
-      </el-form-item>
-      
-      <!-- 分类选择 -->
-      <el-form-item label="收支分类" required>
-        <el-select 
-          v-model="form.category" 
-          placeholder="请选择分类"
-          filterable
-          class="full-width"
-        >
-          <el-option
-            v-for="item in categories"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      
-      <!-- 金额输入 -->
-      <el-form-item label="金额" required>
-        <el-input-number
-          v-model="form.amount"
-          :precision="2"
-          :min="0.01"
-          :controls="false"
-          placeholder="请输入金额"
-        
-          class="full-width"
-        />
-      </el-form-item>
-      
-      <!-- 家庭成员 -->
-      <el-form-item label="家庭成员">
-        <el-select 
-          v-model="form.familyMember" 
-          placeholder="选择成员"
-          clearable
-          class="full-width"
-        >
-          <el-option
-            v-for="member in familyMembers"
-            :key="member"
-            :label="member"
-            :value="member"
-          />
-        </el-select>
-      </el-form-item>
-      
-      <!-- 日期选择 -->
-      <el-form-item label="日期">
-        <el-date-picker
-          v-model="form.date"
-          type="date"
-          placeholder="选择日期"
-          format="yyyy/MM/dd"
-          value-format="yyyy-MM-dd"
-          class="full-width"
-        />
-      </el-form-item>
-      
-      <!-- 备注 -->
-      <el-form-item label="备注">
-        <el-input
-          v-model="form.remark"
-          type="textarea"
-          :rows="2"
-          placeholder="请输入备注信息"
-          class="full-width"
-        />
-      </el-form-item>
-      
-      <!-- 提交按钮 -->
-      <el-form-item>
-        <el-button 
-          type="primary" 
-          @click="submitForm"
-          :loading="submitting"
-          class="submit-btn"
-        >
-          记一笔
-        </el-button>
-      </el-form-item>
-    </el-form>
+  <div class="table-data-view">
+    <!-- 筛选区域 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="filterForm">
+        <el-form-item label="成员">
+          <el-select 
+            v-model="filterForm.member" 
+            clearable
+            placeholder="全部成员"
+            @focus="loadMembers"
+            :loading="memberLoading"
+          >
+            <el-option
+              v-for="member in members"
+              :key="member.id"
+              :label="member.name"
+              :value="member.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="分类">
+          <el-select 
+          v-model="filterForm.category" 
+          clearable 
+          placeholder="全部分类"
+          @focus="loadCategories"
+            :loading="categoryLoading">
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="备注">
+          <el-input v-model="filterForm.remark" placeholder="输入备注关键词" clearable />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="handleFilter">查询</el-button>
+          <el-button @click="resetFilter">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 表格区域 -->
+    <el-table :data="tableData" border v-loading="loading">
+      <el-table-column prop="date" label="日期" width="120" />
+      <el-table-column prop="memberName" label="成员" width="100" />
+      <el-table-column prop="categoryName" label="分类" width="120" />
+      <el-table-column prop="type" label="类型" width="80">
+        <template slot-scope="{row}">
+          <el-tag :type="row.type === 'income' ? 'success' : 'danger'" size="small">
+            {{ row.type === 'income' ? '收入' : '支出' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="amount" label="金额" align="right" width="120">
+        <template slot-scope="{row}">
+          {{ formatCurrency(row.amount) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="remark" label="备注" />
+    </el-table>
+
+    <!-- 分页 -->
+    <el-pagination
+      :current-page="pagination.currentPage"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.pageSize"
+      :total="pagination.total"
+      layout="total, sizes, prev, pager, next, jumper"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      style="margin-top: 20px;"
+    />
   </div>
 </template>
 
 <script>
+import { getMemberList } from '@/api/member';
+
 export default {
   data() {
     return {
-      form: {
-        type: 'expense',
+      loading: false,
+      memberLoading: false,
+      filterForm: {
+        member: '',
         category: '',
-        amount: null,
-        familyMember: '',
-        date: this.getTodayDate(),
         remark: ''
       },
-      categories: [
-        { value: 'food', label: '餐饮美食' },
-        { value: 'shopping', label: '购物消费' },
-        { value: 'housing', label: '住房物业' },
-        { value: 'transport', label: '交通出行' },
-        { value: 'entertainment', label: '休闲娱乐' },
-        { value: 'education', label: '教育培训' },
-        { value: 'medical', label: '医疗保健' },
-        { value: 'salary', label: '工资收入' },
-        { value: 'investment', label: '投资理财' },
-        { value: 'other', label: '其他' }
-      ],
-      familyMembers: ['爸爸', '妈妈', '爷爷', '奶奶', '孩子'],
-      submitting: false
+      pagination: {
+        currentPage: 1,
+        pageSize: 10,
+        total: 0
+      },
+      members: [], // 将从API加载
+      categories: [], // 将从API加载
+      tableData: [] // 将从API加载
     }
   },
   methods: {
-    getTodayDate() {
-      const today = new Date()
-      return today.toISOString().split('T')[0]
-    },
-    submitForm() {
-      if (!this.form.category || !this.form.amount) {
-        this.$message.warning('请填写完整信息')
-        return
-      }
-
-      this.submitting = true
-      // 实际项目中替换为API调用
-      console.log('提交数据:', this.form)
+    // 加载成员列表
+    async loadMembers() {
+      if (this.members.length) return;
       
-      // 模拟提交
-      setTimeout(() => {
-        this.$message.success('记账成功！')
-        this.resetForm()
-        this.$emit('record-added') // 通知父组件数据更新
-        this.submitting = false
-      }, 500)
-    },
-    resetForm() {
-      this.form = {
-        type: 'expense',
-        category: '',
-        amount: null,
-        familyMember: '',
-        date: this.getTodayDate(),
-        remark: ''
+      this.memberLoading = true;
+      try {
+      
+        const res= await getMemberList();
+        this.members = res.data.data;
+        
+      } finally {
+        this.memberLoading = false;
       }
+    },
+
+    // 加载分类列表
+    async loadCategories() {
+      if (this.categories.length) return;
+      
+      try {
+        const res = await this.$axios.get('/api/categories');
+      } catch (error) {
+        console.error('加载分类失败:', error);
+      }
+    },
+
+    // 加载表格数据
+    async loadTableData() {
+      this.loading = true;
+      try {
+        // 替换为实际API调用
+        /* const res = await this.$axios.get('/api/records', {
+          params: {
+            ...this.filterForm,
+            page: this.pagination.currentPage,
+            size: this.pagination.pageSize
+          }
+        });
+        this.tableData = res.data.list;
+        this.pagination.total = res.data.total; */
+        
+        // 示例响应结构：
+        // this.tableData = [{
+        //   id: 1,
+        //   date: '2023-06-01',
+        //   memberId: 1,
+        //   memberName: '爸爸',
+        //   categoryId: 1,
+        //   categoryName: '餐饮',
+        //   type: 'expense',
+        //   amount: 100.00,
+        //   remark: '午餐'
+        // }, ...];
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 查询
+    handleFilter() {
+      this.pagination.currentPage = 1;
+      this.loadTableData();
+    },
+
+    // 重置
+    resetFilter() {
+      this.filterForm = {
+        member: '',
+        category: '',
+        remark: ''
+      };
+      this.pagination.currentPage = 1;
+      this.loadTableData();
+    },
+
+    // 分页
+    handleSizeChange(size) {
+      this.pagination.pageSize = size;
+      this.loadTableData();
+    },
+
+    handleCurrentChange(page) {
+      this.pagination.currentPage = page;
+      this.loadTableData();
+    },
+
+    // 格式化金额
+    formatCurrency(value) {
+      return '¥' + (value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
+  },
+  created() {
+    // 初始化加载必要数据
+    this.loadCategories();
+    this.loadTableData();
   }
 }
 </script>
 
 <style scoped>
-.accounting-form-container {
-  max-width: 800px;
-  margin: 0 auto;
+.table-data-view {
   padding: 20px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
 
-.form-title {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+.filter-card {
+  margin-bottom: 20px;
 }
 
-.form-content {
-  padding: 0 20px;
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
 }
 
-.full-width {
-  width: 100%;
-}
-
-.submit-btn {
-  width: 100%;
+.el-form-item {
+  margin-right: 20px;
+  margin-bottom: 0;
 }
 </style>

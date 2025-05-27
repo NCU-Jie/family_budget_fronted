@@ -1,8 +1,8 @@
 import request from '@/utils/request';
 // 新增接口
-export const getTransactionsList = (params: any) =>
+export const getAccountList = (params: any) =>
     request({
-      'url': `/transactions/page`,
+      'url': `/account/pageQuery`,
       'method': 'get',
       params: params
     })

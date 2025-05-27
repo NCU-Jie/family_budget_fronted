@@ -17,8 +17,8 @@
         </el-table-column>
         <el-table-column label="操作" width="180">
           <template slot-scope="{row}">
-            <el-button size="mini" @click="editCategory(row)">编辑</el-button>
-            <el-button size="mini" type="danger" @click="deleteCategory(row)">删除</el-button>
+            <el-button size="mini" @click="handleEitCategory(row)">编辑</el-button>
+            <el-button size="mini" type="danger" @click="handleDeleteCategory(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -71,14 +71,39 @@
         this.dialogTitle = '编辑分类'
         this.dialogVisible = true
       },
-      deleteCategory(category) {
-        this.$confirm('确定删除此分类吗?', '提示', {
+      async handleDeleteCategory(category) {
+      try {
+        await this.$confirm('确定删除此分类吗?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
           type: 'warning'
-        }).then(() => {
-          this.categories = this.categories.filter(c => c.id !== category.id)
-          this.$message.success('删除成功')
-        })
-      },
+        });
+
+        // 添加加载状态
+        const loading = this.$loading({
+          lock: true,
+          text: '删除中...',
+          spinner: 'el-icon-loading'
+        });
+
+        try {
+          await this.handleDeleteCategory(category.id);
+          this.$message.success('删除成功');
+
+          // 重新获取最新分类列表
+          await this.getCategories();
+        } finally {
+          loading.close();
+        }
+
+      } catch (error) {
+        // 只有当用户点击取消时才不报错
+        if (error !== 'cancel' && error !== 'close') {
+          this.$message.error('删除失败: ' + (error.message || '未知错误'));
+          console.error('删除分类失败:', error);
+        }
+      }
+    },
       saveCategory() {
         if (!this.currentCategory.name) {
           this.$message.warning('请填写分类名称')
@@ -87,8 +112,7 @@
         
         if (this.currentCategory.id) {
           // 更新
-          const index = this.categories.findIndex(c => c.id === this.currentCategory.id)
-          this.categories.splice(index, 1, { ...this.currentCategory })
+         
         } else {
           // 新增
           this.currentCategory.id = Date.now()
