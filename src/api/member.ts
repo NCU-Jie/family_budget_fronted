@@ -26,3 +26,9 @@ export const updateMember = (data: any) =>
       'method': 'put',
       data: data
     })
+//根据id查询成员全部信息
+export const getMemberById = (id: any) =>
+    request({
+      'url': `/member/${id}`,
+      'method': 'get'
+    })

@@ -37,14 +37,14 @@ const routes = [
       },
       {
         path: '/statistics',
-        name: 'finance-statistics',
+    
         component: () => import("@/views/StatisticsView.vue"),
         meta: { title: "统计分析" }
       },
     
       {
         path: '/member',
-        name: 'finance-statistics',
+      
         component: () => import("@/views/MemberView.vue"),
         meta: { title: "家庭成员管理" }
       },

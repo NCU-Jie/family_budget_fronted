@@ -4,35 +4,16 @@
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="成员">
-          <el-select 
-            v-model="filterForm.member" 
-            clearable
-            placeholder="全部成员"
-            @focus="loadMembers"
-            :loading="memberLoading"
-          >
-            <el-option
-              v-for="member in members"
-              :key="member.id"
-              :label="member.name"
-              :value="member.id"
-            />
+          <el-select v-model="filterForm.member" clearable placeholder="全部成员" @focus="loadMembers"
+            :loading="memberLoading">
+            <el-option v-for="member in members" :key="member.id" :label="member.name" :value="member.id" />
           </el-select>
         </el-form-item>
 
         <el-form-item label="分类">
-          <el-select 
-          v-model="filterForm.category" 
-          clearable 
-          placeholder="全部分类"
-          @focus="loadCategories"
+          <el-select v-model="filterForm.category" clearable placeholder="全部分类" @focus="loadCategories"
             :loading="categoryLoading">
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
+            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
           </el-select>
         </el-form-item>
 
@@ -54,8 +35,8 @@
       <el-table-column prop="categoryName" label="分类" width="120" />
       <el-table-column prop="type" label="类型" width="80">
         <template slot-scope="{row}">
-          <el-tag :type="row.type === 'income' ? 'success' : 'danger'" size="small">
-            {{ row.type === 'income' ? '收入' : '支出' }}
+          <el-tag :type="row.typeId === 0 ? 'success' : 'danger'" size="small">
+            {{ row.typeId === 0 ? '收入' : '支出' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -68,22 +49,15 @@
     </el-table>
 
     <!-- 分页 -->
-    <el-pagination
-      :current-page="pagination.currentPage"
-      :page-sizes="[10, 20, 50, 100]"
-      :page-size="pagination.pageSize"
-      :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      style="margin-top: 20px;"
-    />
+    <el-pagination :current-page="pagination.currentPage" :page-sizes="[10, 20, 50, 100]"
+      :page-size="pagination.pageSize" :total="pagination.total" layout="total, sizes, prev, pager, next, jumper"
+      @size-change="handleSizeChange" @current-change="handleCurrentChange" style="margin-top: 20px;" />
   </div>
 </template>
 
 <script>
 import { getMemberList } from '@/api/member';
-
+import { getAccountList } from '@/api/account';
 export default {
   data() {
     return {
@@ -108,13 +82,13 @@ export default {
     // 加载成员列表
     async loadMembers() {
       if (this.members.length) return;
-      
+
       this.memberLoading = true;
       try {
-      
-        const res= await getMemberList();
+
+        const res = await getMemberList();
         this.members = res.data.data;
-        
+
       } finally {
         this.memberLoading = false;
       }
@@ -123,7 +97,7 @@ export default {
     // 加载分类列表
     async loadCategories() {
       if (this.categories.length) return;
-      
+
       try {
         const res = await this.$axios.get('/api/categories');
       } catch (error) {
@@ -136,7 +110,7 @@ export default {
       this.loading = true;
       try {
         // 替换为实际API调用
-        /* const res = await this.$axios.get('/api/records', {
+        const res = await getAccountList({
           params: {
             ...this.filterForm,
             page: this.pagination.currentPage,
@@ -144,8 +118,8 @@ export default {
           }
         });
         this.tableData = res.data.list;
-        this.pagination.total = res.data.total; */
-        
+        this.pagination.total = res.data.total;
+
         // 示例响应结构：
         // this.tableData = [{
         //   id: 1,

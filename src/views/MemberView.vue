@@ -10,7 +10,7 @@
       <el-table-column prop="name" label="成员名称" />
       <el-table-column prop="sex" label="性别">
         <template slot-scope="{row}">
-          {{ row.sex === 0 ? '男' : '女' }}
+          {{ row.sex === "0" ? '男' : '女' }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180">
@@ -22,41 +22,81 @@
     </el-table>
 
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="30%">
-      <el-form :model="currentMember" label-width="80px">
-        <el-form-item label="成员名称" required>
-          <el-input v-model="currentMember.name" />
+      <el-form :model="currentMember" label-width="100px" :rules="rules" ref="memberForm">
+        <el-form-item label="成员名称" prop="name" required>
+          <el-input v-model="currentMember.name" placeholder="请输入成员姓名" />
         </el-form-item>
-        <el-form-item label="性别" required>
+        <el-form-item label="性别" prop="sex" required>
           <el-radio-group v-model="currentMember.sex">
-            <el-radio :label=0>男</el-radio>
-            <el-radio :label=1>女</el-radio>
+            <el-radio label='0'>男</el-radio>
+            <el-radio label='1'>女</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="是否创建账号">
+          <el-switch v-model="currentMember.createAccount" active-text="是" inactive-text="否">
+          </el-switch>
+        </el-form-item>
+        <template v-if="currentMember.createAccount">
+          <el-form-item label="账号" prop="username" :rules="usernameRules">
+            <el-input v-model="currentMember.username" placeholder="请输入账号" />
+          </el-form-item>
+          <el-form-item label="密码" prop="password" :rules="passwordRules">
+            <el-input v-model="currentMember.password" type="password" placeholder="请输入密码" show-password />
+          </el-form-item>
+        </template>
       </el-form>
       <span slot="footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveMember">保存</el-button>
+        <el-button type="primary" @click="submitForm">保存</el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { addMember, getMemberList, deleteMember,updateMember } from '@/api/member'
+import { addMember, getMemberList, deleteMember, updateMember, getMemberById } from '@/api/member'
 
 export default {
   data() {
+    // 密码强度验证
+    const validatePassword = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error('请输入密码'))
+      } else if (value.length < 6) {
+        callback(new Error('密码长度不能少于6位'))
+      } else {
+        callback()
+      }
+    }
+
     return {
-      members: [
-      
-      ],
+      members: [],
       dialogVisible: false,
       dialogTitle: '新增成员',
       currentMember: {
         id: null,
         name: '',
-        sex: 0 // 默认选择男性
-      }
+        sex: '0',
+        createAccount: false,
+        username: '',
+        password: ''
+      },
+      rules: {
+        name: [
+          { required: true, message: '请输入成员名称', trigger: 'blur' },
+          { min: 2, max: 10, message: '长度在 2 到 10 个字符', trigger: 'blur' }
+        ],
+        sex: [
+          { required: true, message: '请选择性别', trigger: 'change' }
+        ]
+      },
+      usernameRules: [
+        { required: true, message: '请输入账号', trigger: 'blur' },
+        { min: 4, max: 20, message: '长度在 4 到 20 个字符', trigger: 'blur' }
+      ],
+      passwordRules: [
+        { required: true, validator: validatePassword, trigger: 'blur' }
+      ]
     }
   },
   created() {
@@ -67,15 +107,41 @@ export default {
       this.currentMember = {
         id: null,
         name: '',
-        sex: 0 // 重置时默认选择男性
+        sex: '0',
+        createAccount: false,
+        username: '',
+        password: ''
       }
       this.dialogTitle = '新增成员'
       this.dialogVisible = true
+      this.$nextTick(() => {
+        this.$refs.memberForm?.clearValidate()
+      })
     },
     handleEditMember(member) {
-      this.currentMember = { ...member }
-      this.dialogTitle = '编辑成员'
-      this.dialogVisible = true
+      getMemberById(member.id).then(res => {
+        // 使用 Object.assign 保持响应性
+        this.currentMember = Object.assign({}, this.currentMember, res.data.data)
+
+        // 显式设置 createAccount 的响应式状态
+        this.$set(this.currentMember, 'createAccount', !!this.currentMember.username)
+
+        this.dialogTitle = '编辑成员'
+        this.dialogVisible = true
+      }).catch(error => {
+        this.$message.error('获取成员信息失败: ' + (error.message || '未知错误'))
+      })
+    },
+
+  
+    submitForm() {
+      this.$refs.memberForm.validate(valid => {
+        if (valid) {
+          this.saveMember()
+        } else {
+          return false
+        }
+      })
     },
     async handleDeleteMember(member) {
       try {
@@ -83,59 +149,64 @@ export default {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
-        });
+        })
 
-        // 添加加载状态
         const loading = this.$loading({
           lock: true,
           text: '删除中...',
           spinner: 'el-icon-loading'
-        });
+        })
 
         try {
-          await deleteMember(member.id);
-          this.$message.success('删除成功');
-
-          // 重新获取最新成员列表
-          await this.getMembers();
+          const res = await deleteMember(member.id)
+          if (res.data.code === 1) {
+            this.$message.success('删除成功')
+            await this.getMembers()
+          }
+          else if (res.data.code === 0) {
+            this.$message.error(res.data.msg || '未知错误')
+          }
         } finally {
-          loading.close();
+          loading.close()
         }
-
       } catch (error) {
-        // 只有当用户点击取消时才不报错
         if (error !== 'cancel' && error !== 'close') {
-          this.$message.error('删除失败: ' + (error.message || '未知错误'));
-          console.error('删除成员失败:', error);
+          this.$message.error('删除失败: ' + (error.message || '未知错误'))
+          console.error('删除成员失败:', error)
         }
       }
     },
     saveMember() {
-      if (!this.currentMember.name) {
-        this.$message.warning('请填写成员名称')
-        return
-      }
+      const memberData = { ...this.currentMember }
 
-      if (this.currentMember.id) {
-        // 更新
-        updateMember(this.currentMember).then(res => {
-          this.$message.success('更新成功')
-          this.getMembers()
-        })
-      } else {
-        // 新增
-        addMember(this.currentMember).then(res => {
-          this.$message.success('新增成功')
-          this.getMembers()
-        })
+      // 如果不创建账号，则移除账号密码字段
+      if (!memberData.createAccount) {
+        delete memberData.username
+        delete memberData.password
       }
+      const savePromise = memberData.id
+        ? updateMember(memberData)
+        : addMember(memberData)
 
-      this.dialogVisible = false
-      this.$message.success('保存成功')
+      savePromise.then(res => {
+        if (res.data.code === 1) {
+          this.$message.success(memberData.id ? '更新成功' : '新增成功')
+          this.dialogVisible = false
+          this.getMembers()
+        } else {
+          this.$message.error(res.data.msg || '未知错误')
+        }
+      }).catch(error => {
+        this.$message.error((memberData.id ? '更新' : '新增') + '失败: ' + (error.msg || '未知错误'))
+
+      })
     },
     getMembers() {
       getMemberList().then(res => {
         this.members = res.data.data
+      }).catch(error => {
+        this.$message.error('获取成员列表失败: ' + (error.message || '未知错误'))
+        console.error('获取成员列表失败:', error)
       })
     }
   }
@@ -153,5 +224,10 @@ export default {
 
 .toolbar {
   margin-bottom: 20px;
+}
+
+/* 调整表单标签对齐 */
+.el-form-item__label {
+  padding-right: 10px;
 }
 </style>
