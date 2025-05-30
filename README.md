@@ -1,5 +1,6 @@
 # family_budget_fronted
 
+这里是家庭记账本项目前端仓库，后端仓库在
 ## Project setup
 ```
 npm install
