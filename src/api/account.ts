@@ -6,3 +6,10 @@ export const getAccountList = (params: any) =>
       'method': 'get',
       params: params
     })
+//添加账目
+export const addAccount = (data: any) =>
+    request({
+      'url': `/account`,
+      'method': 'post',
+      data: data
+    })

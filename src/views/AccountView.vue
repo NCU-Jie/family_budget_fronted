@@ -3,6 +3,16 @@
     <!-- 筛选区域 -->
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
+        <!-- 日期范围选择 - 直接绑定方案 -->
+        <el-form-item label="日期范围:">
+          <el-date-picker v-model="filterForm.beginDate" type="date" placeholder="开始日期" value-format="yyyy-MM-dd"
+            style="width: 150px;" @change="loadTableData" />
+          <span style="margin: 0 5px;">至</span>
+          <el-date-picker v-model="filterForm.endDate" type="date" placeholder="结束日期" value-format="yyyy-MM-dd"
+            style="width: 150px;" @change="loadTableData" />
+        </el-form-item>
+
+        <!-- 成员选择器 -->
         <el-form-item label="成员:">
           <el-select v-model="filterForm.memberId" clearable placeholder="全部成员" @focus="loadMembers"
             :loading="memberLoading" @change="loadTableData">
@@ -21,13 +31,16 @@
         </el-form-item>
 
 
-
-        <el-form-item label="分类:">
-          <pagination-select v-model="selectedValue" :data-list="categoryList" label-key="name" value-key="id"
-            :page-info="pagination" @selectChange="handleSelectChange" @selectPageChange="handlePageChange" />
+        <!-- 分类选择 -->
+        <el-form-item label="收支分类">
+          <pagination-category-select v-model="filterForm.categoryId" :type-id="filterForm.typeId"
+            @change="loadTableData" />
         </el-form-item>
+
         <el-form-item label="备注:">
-          <el-input v-model="filterForm.description" placeholder="输入备注关键词" clearable />
+          <el-input v-model="filterForm.description" placeholder="输入备注关键词" clearable @input="handleDescriptionInput"
+            @clear="handleDescriptionClear" 
+            />
         </el-form-item>
 
         <el-form-item style="float: right;">
@@ -69,12 +82,11 @@
 <script>
 import { getMemberList } from '@/api/member';
 import { getAccountList } from '@/api/account';
-import { getCategories } from '@/api/category';
-import PaginationSelect from '@/components/PaginationSelect';
-import { debounce } from 'lodash';
+import PaginationCategorySelect from '@/components/PaginationCategorySelect';
+import { debounce } from 'lodash';  // 或自行实现防抖
 export default {
   components: {
-    PaginationSelect
+    PaginationCategorySelect
   },
   data() {
     return {
@@ -83,25 +95,33 @@ export default {
       filterForm: {
         memberId: '',
         typeId: '', // 新增的分类类型字段
-        category: '',
-        description: ''
+        categoryId: '',
+        description: '',
+        dateRange: [], // 日期范围
+        beginDate: '', // 开始日期
+        endDate: '',   // 结束日期
       },
       pagination: {
         currentPage: 1,
         pageSize: 10,
         total: 0
       },
-      selectedValue: '',
-      categoryList: [], // 你的数据列表
-
-      searchQuery: '',
-      categorySearchKeyword: '',
       members: [], // 将从API加载
-      categories: [], // 将从API加载
       tableData: [] // 将从API加载
     }
   },
   methods: {
+    // 处理日期范围变化
+    handleDateChange(val) {
+      if (val && val.length === 2) {
+        this.filterForm.beginDate = val[0];
+        this.filterForm.endDate = val[1];
+      } else {
+        this.filterForm.beginDate = '';
+        this.filterForm.endDate = '';
+      }
+      this.loadTableData();
+    },
     // 加载成员列表
     async loadMembers() {
       this.memberLoading = true;
@@ -119,47 +139,26 @@ export default {
       this.filterForm.category = ''; // 清空已选分类
       this.loadTableData(); // 重新加载表格数据
     },
-    async loadData(pageNum = 1, pageSize = 10, query = '') {
-      try {
-        // const res = await yourApiMethod({
-        //   pageNum,
-        //   pageSize,
-        //   keyword: query
-        // });
 
-        // this.categoryList = res.data.list;
-        // this.pagination = {
-        //   pageNum: res.data.pageNum,
-        //   pageSize: res.data.pageSize,
-        //   total: res.data.total
-        // };
-        // this.searchQuery = query;
-      } catch (error) {
-        console.error('加载数据失败:', error);
-      }
-    },
-
-    // 选择项变化
-    handleSelectChange(val) {
-      console.log('当前选中值:', val);
-      // val 格式为 "id-name" (根据你的组件实现)
-    },
-
-    // 分页或搜索变化
-    handlePageChange(pageNum, pageSize, query) {
-      this.loadData(pageNum, pageSize, query);
-    },
     // 加载表格数据
     async loadTableData() {
       this.loading = true;
       try {
         // 替换为实际API调用
-        const res = await getAccountList({
+        const params = {
           ...this.filterForm,
           page: this.pagination.currentPage,
-          pageSize: this.pagination.pageSize,
+          pageSize: this.pagination.pageSize
+        };
 
+        // 删除空值参数
+        Object.keys(params).forEach(key => {
+          if (params[key] === '' || params[key] == null) {
+            delete params[key];
+          }
         });
+
+        const res = await getAccountList(params);
         this.tableData = res.data.data.records;
         this.pagination.total = res.data.total;
 
@@ -179,18 +178,31 @@ export default {
         this.loading = false;
       }
     },
-
+    handleDescriptionInput: debounce(function() {
+      this.pagination.currentPage = 1;  // 重置到第一页
+      this.loadTableData();
+    }, 500),
+    
+    // 清空备注时的处理
+    handleDescriptionClear() {
+      this.pagination.currentPage = 1;
+      this.loadTableData();
+    },
     // 查询
     handleFilter() {
       this.pagination.currentPage = 1;
       this.loadTableData();
     },
 
-    // 重置
+    // 修改重置方法
     resetFilter() {
       this.filterForm = {
-        member: '',
-        category: '',
+        dateRange: [],
+        beginDate: '',
+        endDate: '',
+        memberId: '',
+        typeId: '',
+        categoryId: '',
         description: ''
       };
       this.pagination.currentPage = 1;
@@ -216,8 +228,6 @@ export default {
   created() {
     // 初始化加载必要数据
     this.loadTableData();
-    this.loadCategories();
-
   }
 }
 </script>
