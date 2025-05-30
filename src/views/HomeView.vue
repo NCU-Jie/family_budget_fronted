@@ -23,9 +23,9 @@
             <template slot="title"><i class="el-icon-message"></i>导航一</template>
             <el-menu-item index="/dashboard">首页</el-menu-item>
             <el-menu-item index="/account">记账页</el-menu-item>
-            <el-menu-item index="/statistics">统计分析</el-menu-item>
+            <el-menu-item index="/statistic">统计分析</el-menu-item>
             <el-menu-item index="/member">家庭成员管理</el-menu-item>
-            <el-menu-item index="/categories">收支分类管理</el-menu-item>
+            <el-menu-item index="/category">收支分类管理</el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>

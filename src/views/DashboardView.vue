@@ -32,7 +32,7 @@
       <el-card>
         <div slot="header" class="clearfix">
           <span>近期收支</span>
-          <el-button style="float: right; padding: 3px 0" type="text" @click="goToStatistics">
+          <el-button style="float: right; padding: 3px 0" type="text" @click="goToStatistic">
             查看全部 <i class="el-icon-arrow-right"></i>
           </el-button>
         </div>
@@ -69,7 +69,7 @@
       <el-card>
         <div slot="header" class="clearfix">
           <span>最近10笔记录</span>
-          <el-button style="float: right; padding: 3px 0" type="text" @click="goToAccounting">
+          <el-button style="float: right; padding: 3px 0" type="text" @click="goToAccount">
             记一笔 <i class="el-icon-edit"></i>
           </el-button>
         </div>
@@ -108,10 +108,10 @@ export default {
       userAvatar: '',
       currentDate: this.formatDate(new Date()),
       quickActions: [
-        { icon: 'el-icon-edit', text: '快速记账', color: '#409EFF', path: '/accounting' },
-        { icon: 'el-icon-pie-chart', text: '查看统计', color: '#67C23A', path: '/statistics' },
-        { icon: 'el-icon-setting', text: '分类管理', color: '#E6A23C', path: '/categories' },
-        { icon: 'el-icon-user', text: '成员管理', color: '#F56C6C', path: '/members' }
+        { icon: 'el-icon-edit', text: '记一笔账', color: '#409EFF', path: '/addAccount' },
+        { icon: 'el-icon-pie-chart', text: '统计分析', color: '#67C23A', path: '/statistic' },
+        { icon: 'el-icon-user', text: '成员管理', color: '#F56C6C', path: '/member' },
+        { icon: 'el-icon-setting', text: '分类管理', color: '#E6A23C', path: '/category' }
       ],
       monthExpense: 3250.68,
       dailyExpense: 108.36,
@@ -166,11 +166,11 @@ export default {
     },
 
     // 路由跳转
-    goToStatistics() {
-      this.$router.push('/statistics');
+    goToStatistic() {
+      this.$router.push('/statistic');
     },
-    goToAccounting() {
-      this.$router.push('/accounting');
+    goToAccount() {
+      this.$router.push('/addAccount');
     },
 
     // 格式化工具

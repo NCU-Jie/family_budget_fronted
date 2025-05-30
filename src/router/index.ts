@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from '@/store' // 确保已导入Vuex store
-
+import addAccount from "@/components/addAccount.vue"
 Vue.use(VueRouter)
 
 const routes = [
@@ -19,6 +19,7 @@ const routes = [
       notNeedAuth: true // 明确标记不需要认证
     }
   },
+
   {
     path: '/home',
     component: () => import("@/views/HomeView.vue"),
@@ -36,9 +37,9 @@ const routes = [
         meta: { title: "记账页" }
       },
       {
-        path: '/statistics',
+        path: '/statistic',
     
-        component: () => import("@/views/StatisticsView.vue"),
+        component: () => import("@/views/StatisticView.vue"),
         meta: { title: "统计分析" }
       },
     
@@ -49,9 +50,15 @@ const routes = [
         meta: { title: "家庭成员管理" }
       },
       {
-        path: '/categories',
-        component: () => import("@/views/CategoriesView.vue"),
+        path: '/category',
+        component: () => import("@/views/CategoryView.vue"),
         meta: { title: "收支分类管理" }
+      },
+      {
+        path: '/addAccount', // 记账路由
+        name: 'Accounting',
+        component: addAccount,
+        meta: { title: "记一笔" }
       }
     ]
   },

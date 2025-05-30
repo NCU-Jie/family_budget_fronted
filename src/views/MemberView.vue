@@ -92,7 +92,12 @@ export default {
       },
       usernameRules: [
         { required: true, message: '请输入账号', trigger: 'blur' },
-        { min: 4, max: 20, message: '长度在 4 到 20 个字符', trigger: 'blur' }
+        { min: 4, max: 20, message: '长度在 4 到 20 个字符', trigger: 'blur' },
+        {
+          pattern: /^[A-Za-z0-9]+$/,  // 只允许字母和数字
+          message: '账号只能包含字母或数字',
+          trigger: 'blur'
+        }
       ],
       passwordRules: [
         { required: true, validator: validatePassword, trigger: 'blur' }
@@ -133,7 +138,7 @@ export default {
       })
     },
 
-  
+
     submitForm() {
       this.$refs.memberForm.validate(valid => {
         if (valid) {
