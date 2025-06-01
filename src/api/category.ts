@@ -8,6 +8,13 @@ export const addCategory = (params: any) => {
   });
 };
 //获取所有分类
+export const getCategoryByTypeId = (typeId: number) => {
+  return request({
+    url: `/category/${typeId}`,
+    method: 'get'
+  });
+};
+//分页查询分类
 export const getCategories = (params: any) => {
   return request({
     url: '/category/pageQuery',

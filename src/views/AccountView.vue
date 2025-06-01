@@ -33,19 +33,20 @@
 
         <!-- 分类选择 -->
         <el-form-item label="收支分类">
-          <pagination-category-select v-model="filterForm.categoryId" :type-id="filterForm.typeId"
+          <category-select v-model="filterForm.categoryId" :type-id="filterForm.typeId"
             @change="loadTableData" />
         </el-form-item>
 
         <el-form-item label="备注:">
           <el-input v-model="filterForm.description" placeholder="输入备注关键词" clearable @input="handleDescriptionInput"
-            @clear="handleDescriptionClear" 
-            />
+            @clear="handleDescriptionClear" />
         </el-form-item>
 
         <el-form-item style="float: right;">
-          <el-button type="primary" @click="handleFilter">查询</el-button>
           <el-button @click="resetFilter">重置</el-button>
+          <el-button type="primary" @click="handleFilter">查询</el-button>
+         
+          <el-button type="primary" @click="handleAddAccount">新增</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -70,6 +71,12 @@
       <el-table-column prop="description" label="备注" />
       <el-table-column prop="recordMemberName" label="记账人" />
       <el-table-column prop="createTime" label="记账时间" />
+      <el-table-column label="操作" width="180">
+        <template slot-scope="{row}">
+          <el-button size="mini" @click="handleEditAccount(row)">编辑</el-button>
+          <el-button size="mini" type="danger" @click="handleDeleteAccount(row.id)">删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <!-- 分页 -->
@@ -81,12 +88,12 @@
 
 <script>
 import { getMemberList } from '@/api/member';
-import { getAccountList } from '@/api/account';
-import PaginationCategorySelect from '@/components/PaginationCategorySelect';
+import { getAccountList, deleteAccountById } from '@/api/account';
+import categorySelect from '@/components/categorySelect';
 import { debounce } from 'lodash';  // 或自行实现防抖
 export default {
   components: {
-    PaginationCategorySelect
+    categorySelect
   },
   data() {
     return {
@@ -178,11 +185,11 @@ export default {
         this.loading = false;
       }
     },
-    handleDescriptionInput: debounce(function() {
+    handleDescriptionInput: debounce(function () {
       this.pagination.currentPage = 1;  // 重置到第一页
       this.loadTableData();
     }, 500),
-    
+
     // 清空备注时的处理
     handleDescriptionClear() {
       this.pagination.currentPage = 1;
@@ -223,13 +230,54 @@ export default {
     // 格式化金额
     formatCurrency(value) {
       return '¥' + (value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
+    },
+    handleEditAccount(row) {
+      this.$router.push(`/addAccount/${row.id}`);
+
+    },
+    handleAddAccount() {
+      this.$router.push('/addAccount');
+    },
+    async handleDeleteAccount(accountId) {
+      try {
+        await this.$confirm('确认删除该记录吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+        const loading = this.$loading({
+          lock: true,
+          text: '删除中...',
+          spinner: 'el-icon-loading',
+        });
+        try {
+          const res = await deleteAccountById(accountId);
+          if (res.data.code === 1) {
+            this.$message.success('删除成功');
+            if (this.tableData.length === 1 && this.pagination.currentPage > 1) {
+              this.pagination.currentPage--;
+            }
+            this.loadTableData();
+          } else {
+            this.$message.error(res.data.msg || '删除失败');
+          }
+        } finally {
+          loading.close();
+        }
+      } catch (error) {
+        if (error !== 'cancel' && error !== 'close') {
+          this.$message.error('删除失败: ' + (error.data.msg || '未知错误'))
+          console.error('删除记录失败:', error)
+        }
+      }
+    },
   },
   created() {
     // 初始化加载必要数据
     this.loadTableData();
   }
 }
+
 </script>
 
 <style scoped>

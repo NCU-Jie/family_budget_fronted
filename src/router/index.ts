@@ -55,7 +55,7 @@ const routes = [
         meta: { title: "收支分类管理" }
       },
       {
-        path: '/addAccount', // 记账路由
+        path: '/addAccount/:id?', // 记账路由
         name: 'Accounting',
         component: addAccount,
         meta: { title: "记一笔" }

@@ -74,24 +74,24 @@
           </el-button>
         </div>
         <el-table :data="recentRecords" style="width: 100%" height="300">
-          <el-table-column prop="date" label="日期" width="100" />
-          <el-table-column prop="type" label="类型" width="80">
+          <el-table-column prop="accountDate" label="日期" width="100" />
+          <el-table-column prop="typeId" label="类型" width="80">
             <template slot-scope="{row}">
-              <el-tag :type="row.type === 'income' ? 'success' : 'danger'" size="mini">
-                {{ row.type === 'income' ? '收入' : '支出' }}
+              <el-tag :type="row.typeId === 0 ? 'success' : 'danger'" size="mini">
+                {{ row.typeId === 0 ? '收入' : '支出' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="category" label="分类" width="120" />
-          <el-table-column prop="amount" label="金额" align="right" width="120">
+          <el-table-column prop="categoryName" label="分类" width="120" />
+          <el-table-column prop="money" label="金额"  width="120">
             <template slot-scope="{row}">
-              <span :class="row.type === 'income' ? 'income-text' : 'expense-text'">
-                {{ row.type === 'income' ? '+' : '-' }}{{ formatCurrency(row.amount) }}
+              <span :class="row.typeId === 0 ? 'income-text' : 'expense-text'">
+                {{ row.typeId === 0 ? '+' : '-' }}{{ formatCurrency(row.money) }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="member" label="成员" width="100" />
-          <el-table-column prop="remark" label="备注" />
+          <el-table-column prop="memberName" label="成员" width="100" />
+          <el-table-column prop="description" label="备注" />
         </el-table>
       </el-card>
     </div>
@@ -99,6 +99,7 @@
 </template>
 
 <script>
+import { getAccountList } from '@/api/account';
 import * as echarts from 'echarts';
 
 export default {
@@ -118,16 +119,14 @@ export default {
       remainingBudget: 1749.32,
       incomeExpenseRatio: 72,
       recentRecords: [
-        { id: 1, date: '2023-06-15', type: 'expense', category: '餐饮美食', amount: 68.00, member: '爸爸', remark: '午餐' },
-        { id: 2, date: '2023-06-15', type: 'income', category: '工资收入', amount: 8000.00, member: '妈妈', remark: '六月工资' },
-        { id: 3, date: '2023-06-14', type: 'expense', category: '交通出行', amount: 15.00, member: '爷爷', remark: '公交车费' },
-        { id: 4, date: '2023-06-14', type: 'expense', category: '医疗保健', amount: 125.00, member: '奶奶', remark: '购买药品' },
-        { id: 5, date: '2023-06-13', type: 'expense', category: '教育培训', amount: 299.00, member: '孩子', remark: '课外辅导书' }
       ]
     };
   },
   mounted() {
     this.initMiniChart();
+  },
+  created() {
+    this.getRecentRecords();
   },
   methods: {
     // 初始化迷你图表
@@ -160,6 +159,7 @@ export default {
       window.addEventListener('resize', () => chart.resize());
     },
 
+
     // 快捷操作处理
     handleAction(action) {
       this.$router.push(action.path);
@@ -183,9 +183,21 @@ export default {
     },
     formatNumber(value) {
       return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    },
+    async getRecentRecords() {
+      // TODO: 获取最近10笔记录
+      const res = await getAccountList({ page: 1, pageSize: 10 });
+      if (res.data.code === 1) {
+        this.recentRecords = res.data.data.records;
+        console.log(this.recentRecords);
+      
+      }
+      else {
+        this.$message.error(res.data.msg);
+      }
     }
   }
-};
+}
 </script>
 
 <style scoped>
