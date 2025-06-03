@@ -167,7 +167,7 @@ export default {
 
         const res = await getAccountList(params);
         this.tableData = res.data.data.records;
-        this.pagination.total = res.data.total;
+        this.pagination.total = res.data.data.total;
 
         // 示例响应结构：
         // this.tableData = [{

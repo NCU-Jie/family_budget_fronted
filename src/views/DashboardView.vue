@@ -8,7 +8,7 @@
             <h2>欢迎回来，{{ userName }}！</h2>
             <p class="sub-title">今天是 {{ currentDate }}，本月已消费 ¥{{ formatNumber(monthExpense) }}</p>
           </div>
-          <el-avatar :size="60" :src="userAvatar" class="avatar"></el-avatar>
+         
         </div>
       </el-card>
     </div>
@@ -83,7 +83,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="categoryName" label="分类" width="120" />
-          <el-table-column prop="money" label="金额"  width="120">
+          <el-table-column prop="money" label="金额" width="120">
             <template slot-scope="{row}">
               <span :class="row.typeId === 0 ? 'income-text' : 'expense-text'">
                 {{ row.typeId === 0 ? '+' : '-' }}{{ formatCurrency(row.money) }}
@@ -100,13 +100,12 @@
 
 <script>
 import { getAccountList } from '@/api/account';
+import { getStatistic } from '@/api/statistic';
 import * as echarts from 'echarts';
 
 export default {
   data() {
     return {
-      userName: '管理员',
-      userAvatar: '',
       currentDate: this.formatDate(new Date()),
       quickActions: [
         { icon: 'el-icon-edit', text: '记一笔账', color: '#409EFF', path: '/addAccount' },
@@ -114,51 +113,132 @@ export default {
         { icon: 'el-icon-user', text: '成员管理', color: '#F56C6C', path: '/member' },
         { icon: 'el-icon-setting', text: '分类管理', color: '#E6A23C', path: '/category' }
       ],
-      monthExpense: 3250.68,
-      dailyExpense: 108.36,
-      remainingBudget: 1749.32,
-      incomeExpenseRatio: 72,
+      monthIncome: 0,
+      monthExpense: 0,
+      dailyExpense: 0,
+      remainingBudget: 0,
+      incomeExpenseRatio: 0,
+      monthExpenselist: [],
       recentRecords: [
       ]
     };
   },
-  mounted() {
-    this.initMiniChart();
-  },
+
   created() {
+
+    this.getMonthDataAndInitChart();
     this.getRecentRecords();
   },
+  computed: {
+    userName() {
+      return this.$store.getters['user/name']; // 注意模块命名空间
+    }
+  },
   methods: {
-    // 初始化迷你图表
-    initMiniChart() {
+ 
+    async getMonthDataAndInitChart() {
+      try {
+        const now = new Date();
+        const beginDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
+          .toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        // 1. 获取当月数据
+        const response = await getStatistic({
+          beginDate,
+          endDate: today,
+          groupType: 'day'
+        });
+
+        // 2. 保存原始数据
+        this.monthExpenselist = response.data.data || [];
+        const chartData = this.monthExpenselist;
+
+        // 3. 计算月度统计数据
+        const monthExpense = chartData.reduce((acc, cur) => acc + cur.expense, 0);
+        const monthIncome = chartData.reduce((acc, cur) => acc + cur.income, 0);
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const days = new Date(year, month + 1, 0).getDate();
+        
+        this.monthExpense = monthExpense;
+        this.monthIncome = monthIncome;
+        this.dailyExpense =( monthExpense / days).toFixed(2);
+        this.remainingBudget = monthIncome - monthExpense;
+        this.incomeExpenseRatio = (monthIncome / monthExpense * 100).toFixed(2);
+
+        // 4. 初始化迷你图表
+        this.initMiniChart(chartData);
+        
+      } catch (error) {
+        console.error('获取月度数据失败:', error);
+      }
+    },
+
+    initMiniChart(chartData) {
+      if (!chartData || chartData.length === 0) {
+        console.warn('没有可用的图表数据');
+        return;
+      }
+
+      // 处理日期格式 (从 "2025-06-01" 转为 "6/1")
+      const dates = chartData.map(item => {
+        const [year, month, day] = item.groupName.split('-');
+        return `${parseInt(month)}/${parseInt(day)}`;
+      });
+
+      // 获取收支数据
+      const incomeData = chartData.map(item => item.income);
+      const expenseData = chartData.map(item => item.expense);
+
+      // 初始化图表
       const chart = echarts.init(document.getElementById('mini-chart'));
-      chart.setOption({
-        tooltip: { trigger: 'axis' },
+      
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          formatter: params => {
+            const date = params[0].axisValue;
+            const income = params[1]?.value || 0;
+            const expense = params[0]?.value || 0;
+            return `日期: ${date}<br/>
+                    收入: ¥${income.toFixed(2)}<br/>
+                    支出: ¥${expense.toFixed(2)}`;
+          }
+        },
         xAxis: {
           type: 'category',
-          data: ['6/10', '6/11', '6/12', '6/13', '6/14', '6/15']
+          data: dates,
+          axisLabel: { interval: 0 } // 强制显示所有标签
         },
-        yAxis: { type: 'value' },
+        yAxis: {
+          type: 'value',
+          axisLabel: { formatter: '¥{value}' }
+        },
         series: [
           {
             name: '支出',
             type: 'line',
             smooth: true,
-            data: [120, 132, 101, 299, 190, 68],
-            itemStyle: { color: '#F56C6C' }
+            data: expenseData,
+            itemStyle: { color: '#F56C6C' },
+            symbol: 'circle',
+            symbolSize: 6
           },
           {
             name: '收入',
             type: 'line',
             smooth: true,
-            data: [0, 0, 0, 0, 0, 8000],
-            itemStyle: { color: '#67C23A' }
+            data: incomeData,
+            itemStyle: { color: '#67C23A' },
+            symbol: 'circle',
+            symbolSize: 6
           }
         ]
-      });
+      };
+
+      chart.setOption(option);
       window.addEventListener('resize', () => chart.resize());
     },
-
 
     // 快捷操作处理
     handleAction(action) {
@@ -169,6 +249,7 @@ export default {
     goToStatistic() {
       this.$router.push('/statistic');
     },
+    
     goToAccount() {
       this.$router.push('/addAccount');
     },
@@ -178,22 +259,30 @@ export default {
       const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
       return date.toLocaleDateString('zh-CN', options);
     },
+    
     formatCurrency(value) {
       return value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
+    
     formatNumber(value) {
-      return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      // 确保是数字，并保留2位小数
+      const num = Number(value).toFixed(2);
+
+      // 处理整数部分的千分位
+      return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
+    
     async getRecentRecords() {
-      // TODO: 获取最近10笔记录
-      const res = await getAccountList({ page: 1, pageSize: 10 });
-      if (res.data.code === 1) {
-        this.recentRecords = res.data.data.records;
-        console.log(this.recentRecords);
-      
-      }
-      else {
-        this.$message.error(res.data.msg);
+      try {
+        const res = await getAccountList({ page: 1, pageSize: 10 });
+        if (res.data.code === 1) {
+          this.recentRecords = res.data.data.records;
+        } else {
+          this.$message.error(res.data.msg);
+        }
+      } catch (error) {
+        console.error('获取最近记录失败:', error);
+        this.$message.error('获取最近记录失败');
       }
     }
   }
@@ -228,11 +317,7 @@ export default {
   color: #909399;
 }
 
-.avatar {
-  background-color: #409EFF;
-  color: white;
-  font-size: 24px;
-}
+
 
 .quick-actions {
   margin-bottom: 20px;

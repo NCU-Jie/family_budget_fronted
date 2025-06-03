@@ -10,8 +10,9 @@ export const addCategory = (params: any) => {
 //获取所有分类
 export const getCategoryByTypeId = (typeId: number) => {
   return request({
-    url: `/category/${typeId}`,
-    method: 'get'
+    url: `/category/list`,
+    method: 'get',
+    params: { typeId }
   });
 };
 //分页查询分类

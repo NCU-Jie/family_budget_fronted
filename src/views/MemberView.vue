@@ -21,7 +21,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="30%">
+    <el-dialog :title="isEditMode ? '修改成员' : '新增成员'" :visible.sync="dialogVisible" width="30%">
       <el-form :model="currentMember" label-width="100px" :rules="rules" ref="memberForm">
         <el-form-item label="成员名称" prop="name" required>
           <el-input v-model="currentMember.name" placeholder="请输入成员姓名" />
@@ -40,8 +40,10 @@
           <el-form-item label="账号" prop="username" :rules="usernameRules">
             <el-input v-model="currentMember.username" placeholder="请输入账号" />
           </el-form-item>
-          <el-form-item label="密码" prop="password" :rules="passwordRules">
-            <el-input v-model="currentMember.password" type="password" placeholder="请输入密码" show-password />
+          <el-form-item label="密码" prop="password" :rules="isEditMode ?[]: passwordRules">
+            <el-input v-model="currentMember.password" type="password" :placeholder="isEditMode ? '留空则不修改密码' : '请输入密码'"
+              show-password />
+         
           </el-form-item>
         </template>
       </el-form>
@@ -70,6 +72,7 @@ export default {
     }
 
     return {
+      isEditMode: false, // false表示新增，true表示修改
       members: [],
       dialogVisible: false,
       dialogTitle: '新增成员',
@@ -81,6 +84,7 @@ export default {
         username: '',
         password: ''
       },
+
       rules: {
         name: [
           { required: true, message: '请输入成员名称', trigger: 'blur' },
@@ -109,6 +113,7 @@ export default {
   },
   methods: {
     showAddDialog() {
+      this.isEditMode = false
       this.currentMember = {
         id: null,
         name: '',
@@ -124,10 +129,10 @@ export default {
       })
     },
     handleEditMember(member) {
+      this.isEditMode = true
       getMemberById(member.id).then(res => {
         // 使用 Object.assign 保持响应性
         this.currentMember = Object.assign({}, this.currentMember, res.data.data)
-
         // 显式设置 createAccount 的响应式状态
         this.$set(this.currentMember, 'createAccount', !!this.currentMember.username)
 
@@ -189,7 +194,7 @@ export default {
         delete memberData.username
         delete memberData.password
       }
-      const savePromise = memberData.id
+      const savePromise = (memberData.id !== undefined && memberData.id !== null)
         ? updateMember(memberData)
         : addMember(memberData)
 

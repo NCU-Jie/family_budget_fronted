@@ -26,9 +26,9 @@ export const getAccountById = (id: any) =>
       'method': 'get'
     })
 //根据id更新账目
-export const updateAccountById = (id: any, data: any) =>
+export const updateAccount= ( data: any) =>
     request({
-      'url': `/account/${id}`,
+      'url': `/account`,
       'method': 'put',
       data: data
     })
