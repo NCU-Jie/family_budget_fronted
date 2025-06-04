@@ -8,44 +8,55 @@
       <el-form-item prop="password">
         <el-input v-model="loginForm.password" type="password" placeholder="密码"></el-input>
       </el-form-item>
-      <el-button type="primary" @click="handleLogin">登录</el-button>
+      <el-button 
+        type="primary" 
+        @click="handleLogin"
+        :loading="loading"
+        class="custom-login-btn"
+      >
+        登录
+      </el-button>
+      <div class="custom-login-link">
+        还没有账号？<el-link type="primary" @click="goToRegister">立即注册</el-link>
+      </div>
     </el-form>
   </div>
 </template>
 
 <script>
 export default {
-  name: "LoginPage", // 修改组件名称为多单词
+  name: "LoginPage",
   data() {
     return {
       loginForm: {
         username: "",
         password: "",
       },
+      loading: false
     };
   },
   methods: {
+    goToRegister() {
+      this.$router.push('/register');
+    },
     async handleLogin() {
-      // 验证表单输入
       if (!this.loginForm.username || !this.loginForm.password) {
         this.$message.error('请输入用户名和密码');
         return;
       }
 
+      this.loading = true;
       try {
-        // 调用 Vuex action 进行登录
         const success = await this.$store.dispatch('user/login', this.loginForm);
         if (success) {
           this.$message.success('登录成功');
-          // 跳转到首页或重定向页面
           const redirect = this.$route.query.redirect || '/home';
           this.$router.push(redirect);
-        } else {
-          // 登录失败（错误信息已在 action 中处理）
         }
       } catch (error) {
-        // 处理网络错误或其他异常
         this.$message.error(error.message || '登录失败，请稍后重试');
+      } finally {
+        this.loading = false;
       }
     }
   }
@@ -63,6 +74,44 @@ export default {
 }
 
 .login-form {
-  width: 300px;
+  width: 360px;
+  padding: 30px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 自定义登录按钮样式 - 与注册页保持一致 */
+.custom-login-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 40px;
+  font-size: 16px;
+  border-radius: 4px;
+  background-color: #409EFF;
+  border-color: #409EFF;
+}
+
+.custom-login-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+.custom-login-btn:active {
+  background-color: #3a8ee6;
+  border-color: #3a8ee6;
+}
+
+/* 自定义登录链接样式 - 与注册页保持一致 */
+.custom-login-link {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #606266;
+}
+
+.custom-login-link .el-link {
+  font-size: 14px;
+  vertical-align: baseline;
 }
 </style>

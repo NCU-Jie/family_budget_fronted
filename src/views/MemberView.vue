@@ -155,7 +155,7 @@ export default {
     },
     async handleDeleteMember(member) {
       try {
-        await this.$confirm('确定删除此成员吗?', '提示', {
+        await this.$confirm( '确定删除此成员吗？\n（与其相关的所有账目也将被删除）' , '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'

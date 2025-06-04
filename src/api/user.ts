@@ -7,3 +7,10 @@ export const login = (params: any) => {
       data: { ...params }
     });
   };
+  export function register(data: any) {
+    return request({
+      url: '/member/register',
+      method: 'post',
+      data: { ...data }
+    })
+  }

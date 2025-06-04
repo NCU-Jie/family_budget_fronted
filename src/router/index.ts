@@ -19,6 +19,16 @@ const routes = [
       notNeedAuth: true // 明确标记不需要认证
     }
   },
+  {
+    path: "/register",
+    name: "Register",
+    component: () => import("@/views/RegisterView.vue"),
+    meta: { 
+      title: "注册", 
+      hidden: true, 
+      notNeedAuth: true // 明确标记不需要认证
+    }
+  },
 
   {
     path: '/home',

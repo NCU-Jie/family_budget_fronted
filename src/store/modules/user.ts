@@ -1,5 +1,5 @@
 import { Module } from 'vuex';
-import { login } from "@/api/login";
+import { login } from "@/api/user";
 import { isValidToken, parseToken } from "@/utils/auth"; // 添加parseToken方法
 
 // 定义用户信息类型

@@ -3,8 +3,8 @@ import request from '@/utils/request';
 export const getAccountList = (params: any) =>
     request({
       'url': `/account/pageQuery`,
-      'method': 'get',
-      params: params
+      'method': 'post',
+      data: params
     })
 //添加账目
 export const addAccount = (data: any) =>

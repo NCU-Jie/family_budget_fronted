@@ -7,3 +7,11 @@ export function getStatistic(params: any) {
     data: params,
   });
 }
+//查询分类统计数据
+export function getCategoryStatistic(params: any) {
+  return request({
+    url: '/statistic/category',
+    method: 'post',
+    data: params,
+  });
+}

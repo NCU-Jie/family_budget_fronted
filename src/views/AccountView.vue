@@ -33,8 +33,7 @@
 
         <!-- 分类选择 -->
         <el-form-item label="收支分类">
-          <category-select v-model="filterForm.categoryId" :type-id="filterForm.typeId"
-            @change="loadTableData" />
+          <category-select v-model="filterForm.categoryId" :type-id="filterForm.typeId" @change="loadTableData" />
         </el-form-item>
 
         <el-form-item label="备注:">
@@ -45,7 +44,7 @@
         <el-form-item style="float: right;">
           <el-button @click="resetFilter">重置</el-button>
           <el-button type="primary" @click="handleFilter">查询</el-button>
-         
+
           <el-button type="primary" @click="handleAddAccount">新增</el-button>
         </el-form-item>
       </el-form>
@@ -104,7 +103,6 @@ export default {
         typeId: '', // 新增的分类类型字段
         categoryId: '',
         description: '',
-        dateRange: [], // 日期范围
         beginDate: '', // 开始日期
         endDate: '',   // 结束日期
       },
@@ -152,8 +150,10 @@ export default {
       this.loading = true;
       try {
         // 替换为实际API调用
+        const { memberId, ...restFilterForm } = this.filterForm; // 解构出 memberId，剩余字段存入 restFilterForm
         const params = {
-          ...this.filterForm,
+          ...restFilterForm,          // 展开剩余字段（不包含 memberId）
+          memberIds: memberId ? [memberId] : [], // 确保 memberIds 是数组格式
           page: this.pagination.currentPage,
           pageSize: this.pagination.pageSize
         };
@@ -169,18 +169,6 @@ export default {
         this.tableData = res.data.data.records;
         this.pagination.total = res.data.data.total;
 
-        // 示例响应结构：
-        // this.tableData = [{
-        //   id: 1,
-        //   date: '2023-06-01',
-        //   memberId: 1,
-        //   memberName: '爸爸',
-        //   categoryId: 1,
-        //   categoryName: '餐饮',
-        //   type: 'expense',
-        //   amount: 100.00,
-        //   description: '午餐'
-        // }, ...];
       } finally {
         this.loading = false;
       }
@@ -204,7 +192,6 @@ export default {
     // 修改重置方法
     resetFilter() {
       this.filterForm = {
-        dateRange: [],
         beginDate: '',
         endDate: '',
         memberId: '',
