@@ -34,6 +34,7 @@
         </el-form-item>
         <el-form-item label="是否创建账号">
           <el-switch v-model="currentMember.createAccount" active-text="是" inactive-text="否">
+            
           </el-switch>
         </el-form-item>
         <template v-if="currentMember.createAccount">

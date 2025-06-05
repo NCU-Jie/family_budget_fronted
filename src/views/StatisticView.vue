@@ -331,6 +331,7 @@ export default {
 
       // 填充数据
       sortedData.forEach(item => {
+        console.log(item.groupName);
         dates.push(this.formatChartDate(item.groupName)); // 格式化日期显示
         incomeData.push(item.income);
         expenseData.push(item.expense);
@@ -369,9 +370,7 @@ export default {
           axisLabel: {
             formatter: value => {
               // 如果是按天显示，只显示日部分
-              if (this.timeRange === 'day') {
-                return value.split('-')[2] + '日';
-              }
+         
               return value;
             }
           }
@@ -419,19 +418,9 @@ export default {
       const month = date.getMonth() + 1;
       const day = date.getDate();
 
-      // 根据时间维度决定显示格式
-      switch (this.filterForm.timeRange) {
-        case 'day':
-          return `${day}日`;
-        case 'week':
-          return `${month}月${day}日`;
-        case 'month':
-          return `${month}月${day}日`;
-        case 'year':
-          return `${month}月`;
-        default:
-          return `${month}月${day}日`;
-      }
+
+      return `${month}月${day}日`;
+      
     },
 
     // 加载表格数据
